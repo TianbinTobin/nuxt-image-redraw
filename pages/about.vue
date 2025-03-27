@@ -52,33 +52,18 @@ onMounted(() => {
   // );
 });
 
-const { isDragging, translateX, translateY, setScaleSize } = useDraggable({
+const { isDragging, scaleSize, translateX, translateY } = useDraggable({
   containerEl: '.redraw-container',
   dragEl: '.mask-container',
 });
 
-const {
-  scaleSize,
-  currentTool,
-  setTool,
-  execRedo,
-  execUndo,
-  loadImage,
-  initRedraw,
-} = useImageRedraw({
-  container: 'container',
-  imageContainer: '.image-container',
-  editorContainer: '.editor-container',
-  redrawContainer: '.redraw-container',
-});
-
-watch(
-  scaleSize,
-  (newValue) => {
-    setScaleSize(newValue);
-  },
-  { immediate: true }
-);
+const { currentTool, setTool, execRedo, execUndo, loadImage, initRedraw } =
+  useImageRedraw({
+    container: 'container',
+    imageContainer: '.image-container',
+    editorContainer: '.editor-container',
+    redrawContainer: '.redraw-container',
+  });
 </script>
 
 <style lang="css" scoped>

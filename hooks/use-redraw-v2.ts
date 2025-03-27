@@ -11,15 +11,6 @@ interface DrawPath {
 
 type PathType = 'brush' | 'eraser' | 'pan';
 
-enum WheelAction {
-  TouchPadPinchUp = 'TouchPadPinchUp',
-  TouchPadPinchDown = 'TouchPadPinchDown',
-  TouchPadMoveUp = 'TouchPadMoveUp',
-  TouchPadMoveDown = 'TouchPadMoveDown',
-  MouseUp = 'MouseUp',
-  MouseDown = 'MouseDown',
-}
-
 export function useImageRedraw(options: {
   container: string | HTMLElement;
   imageContainer: string | HTMLElement;
@@ -44,7 +35,6 @@ export function useImageRedraw(options: {
   const undoPaths: DrawPath[] = [];
   const redoPaths: DrawPath[] = [];
 
-  const scaleSize = ref(1);
   const brushSize = ref(15);
   const eraserSize = ref(15);
   const isDrawing = ref(false); // 是否正在绘制
@@ -174,7 +164,6 @@ export function useImageRedraw(options: {
       canvas.addEventListener('mousemove', handleMousemove);
       canvas.addEventListener('mouseout', handleMouseout);
       canvas.addEventListener('mouseover', handleMouseover);
-      containerEl.addEventListener('wheel', handleWheel);
       window.addEventListener(
         'onpointerup' in window ? 'pointerup' : 'mouseup',
         handleMouseup
@@ -188,7 +177,6 @@ export function useImageRedraw(options: {
       canvas.removeEventListener('mousemove', handleMousemove);
       canvas.removeEventListener('mouseout', handleMouseout);
       canvas.removeEventListener('mouseover', handleMouseover);
-      containerEl.removeEventListener('wheel', handleWheel);
       window.removeEventListener(
         'onpointerup' in window ? 'pointerup' : 'mouseup',
         handleMouseup
@@ -269,60 +257,7 @@ export function useImageRedraw(options: {
     console.log('Mouse out', event.offsetX, event.offsetY);
   }
 
-  function handleWheel(event: WheelEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    const { action } = checkWheelAction(event);
-    console.log('Wheel action', action);
-    if (
-      [
-        WheelAction.TouchPadPinchUp,
-        WheelAction.TouchPadPinchDown,
-        WheelAction.MouseUp,
-        WheelAction.MouseDown,
-      ].includes(action)
-    ) {
-      handleScale(
-        action === WheelAction.MouseUp ||
-          action === WheelAction.TouchPadPinchUp,
-        action === WheelAction.TouchPadPinchDown ||
-          action === WheelAction.TouchPadPinchUp
-      );
-    }
-  }
-
-  function handleScale(isUp: boolean, isTouch: boolean) {
-    const flag = isTouch ? (isUp ? 1.03 : 0.97) : isUp ? 1.06 : 0.94;
-    scaleSize.value = Math.max(
-      0.33,
-      Math.min(3, Math.abs(scaleSize.value * flag))
-    );
-  }
-
-  function checkWheelAction(event: WheelEvent) {
-    if (event.ctrlKey) {
-      return {
-        action:
-          event.deltaY > 0
-            ? WheelAction.TouchPadPinchDown
-            : WheelAction.TouchPadPinchUp,
-      };
-    }
-    return (event.deltaY ? Math.abs(event.deltaY) < 100 : event.deltaMode === 0)
-      ? {
-          action:
-            event.deltaY > 0
-              ? WheelAction.TouchPadMoveUp
-              : WheelAction.TouchPadMoveDown,
-        }
-      : {
-          action:
-            event.deltaY > 0 ? WheelAction.MouseUp : WheelAction.MouseDown,
-        };
-  }
-
   return {
-    scaleSize,
     isDrawing,
     currentTool,
     setTool,
