@@ -7,7 +7,11 @@ enum WheelAction {
   MouseDown = 'MouseDown',
 }
 
-export function useDraggable(options: { containerEl: string; dragEl: string }) {
+export function useDraggable(options: {
+  container: string | HTMLElement;
+  dragContainer: string | HTMLElement;
+  redrawContainer: string | HTMLElement;
+}) {
   let startPanX = 0;
   let startPanY = 0;
 
@@ -20,22 +24,38 @@ export function useDraggable(options: { containerEl: string; dragEl: string }) {
   const isDragging = ref(false);
 
   let containerEl: HTMLElement | null;
+  let dragContainerEl: HTMLElement | null;
+  let redrawContainerEl: HTMLElement | null;
 
-  onMounted(() => {
-    containerEl = document.querySelector<HTMLElement>(options.containerEl);
-    containerWidth = containerEl!.clientWidth;
-    containerHeight = containerEl!.clientHeight;
+  function initDraggable() {
+    if (options.container instanceof HTMLElement) {
+      containerEl = options.container;
+    } else {
+      containerEl = document.getElementById(options.container)!;
+    }
+    if (options.dragContainer instanceof HTMLElement) {
+      dragContainerEl = options.dragContainer;
+    } else {
+      dragContainerEl = document.querySelector(options.dragContainer)!;
+    }
+    if (options.redrawContainer instanceof HTMLElement) {
+      redrawContainerEl = options.redrawContainer;
+    } else {
+      redrawContainerEl = document.querySelector(options.redrawContainer)!;
+    }
+    containerWidth = containerEl.clientWidth;
+    containerHeight = containerEl.clientHeight;
+
     bindListener();
-  });
+  }
 
-  onBeforeUnmount(() => {
+  function destroyDraggable() {
     unbindListener();
-  });
+  }
 
   function bindListener() {
-    const dragEl = document.querySelector<HTMLElement>(options.dragEl);
-    if (dragEl && containerEl) {
-      dragEl.addEventListener('mousedown', dragMousedown);
+    if (dragContainerEl && containerEl) {
+      dragContainerEl.addEventListener('mousedown', dragMousedown);
       document.addEventListener('mousemove', dragMousemove);
       document.addEventListener('mouseup', dragMouseup);
       document.addEventListener('mouseleave', dragMouseleave);
@@ -44,9 +64,8 @@ export function useDraggable(options: { containerEl: string; dragEl: string }) {
   }
 
   function unbindListener() {
-    const dragEl = document.querySelector<HTMLElement>(options.dragEl);
-    if (dragEl && containerEl) {
-      dragEl.removeEventListener('mousedown', dragMousedown);
+    if (dragContainerEl && containerEl) {
+      dragContainerEl.removeEventListener('mousedown', dragMousedown);
       document.removeEventListener('mousemove', dragMousemove);
       document.removeEventListener('mouseup', dragMouseup);
       document.removeEventListener('mouseleave', dragMouseleave);
@@ -67,6 +86,7 @@ export function useDraggable(options: { containerEl: string; dragEl: string }) {
       const { x, y } = getRange();
       translateX.value = getValueInRange(translateX.value + dx, x);
       translateY.value = getValueInRange(translateY.value + dy, y);
+      changeMoveStyle();
       console.log('Mouse move at: ', dx, translateX.value, translateY.value);
       [startPanX, startPanY] = [event.clientX, event.clientY];
     }
@@ -95,6 +115,15 @@ export function useDraggable(options: { containerEl: string; dragEl: string }) {
 
   function getValueInRange(value: number, range: { min: number; max: number }) {
     return Math.min(range.max, Math.max(range.min, value));
+  }
+
+  function changeMoveStyle() {
+    if (redrawContainerEl) {
+      redrawContainerEl.style.transition = isDragging.value
+        ? 'none'
+        : 'transform 200ms';
+      redrawContainerEl.style.transform = `scale(${scaleSize.value}) translate(${translateX.value}px, ${translateY.value}px)`;
+    }
   }
 
   function handleWheel(event: WheelEvent) {
@@ -149,5 +178,5 @@ export function useDraggable(options: { containerEl: string; dragEl: string }) {
         };
   }
 
-  return { isDragging, scaleSize, translateX, translateY };
+  return { isDragging, scaleSize, translateX, translateY, initDraggable };
 }
